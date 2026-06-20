@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Painel — Indicadores de TI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg: #070B16;
+  --surface: #101A2E;
+  --surface-2: #16223A;
+  --ink: #EAF2FF;
+  --ink-soft: #93A4C2;
+  --ink-faint: #5C6C8A;
+  --blue: #3DA9FC;
+  --cyan: #22D3EE;
+  --violet: #9B6BFF;
+  --green: #2DD4A7;
+  --red: #FB5A73;
+  --amber: #FFB454;
+  --border: rgba(255,255,255,.09);
+  --border-strong: rgba(255,255,255,.16);
+  --radius: 16px;
+  --glow-blue: 0 0 0 1px rgba(61,169,252,.45), 0 0 28px -6px rgba(61,169,252,.55);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(61,169,252,.16), transparent 60%),
+    radial-gradient(ellipse 800px 480px at 100% 0%, rgba(155,107,255,.13), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  font-family:'Inter', system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  display:flex; align-items:center; justify-content:center; padding:40px 18px;
+}
+.wrap{ width:100%; max-width:640px; }
+.brand{ display:flex; align-items:center; gap:12px; margin-bottom:26px; }
+.brand-mark{
+  width:42px; height:42px; border-radius:11px;
+  background: linear-gradient(135deg, var(--cyan), var(--blue) 55%, var(--violet));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px; color:#04101F;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.1) inset, 0 6px 20px -4px rgba(61,169,252,.65);
+}
+.brand-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:19px; color:#fff; }
+.brand-sub{ font-size:12.5px; color: var(--ink-soft); margin-top:2px; }
+
+.card{
+  background: linear-gradient(165deg, rgba(255,255,255,.045), rgba(255,255,255,.012)), var(--surface);
+  border:1px solid var(--border); border-radius: var(--radius);
+  padding:28px; box-shadow: 0 18px 40px -18px rgba(0,0,0,.65);
+  backdrop-filter: blur(18px);
+}
+h1{ font-family:'Space Grotesk', sans-serif; font-size:21px; margin:0 0 6px; color:#fff; }
+.lead{ font-size:13.5px; color: var(--ink-soft); line-height:1.5; margin:0 0 24px; }
+
+.dropzone{
+  border:2px dashed var(--border-strong); border-radius:14px; padding:34px 20px;
+  text-align:center; cursor:pointer; transition: all .2s ease; background: rgba(255,255,255,.02);
+}
+.dropzone:hover, .dropzone.drag{ border-color: var(--blue); background: rgba(61,169,252,.08); }
+.dropzone svg{ color: var(--ink-faint); margin-bottom:10px; }
+.dropzone .dz-title{ font-weight:700; font-size:14.5px; color: var(--ink); margin-bottom:4px; }
+.dropzone .dz-sub{ font-size:12px; color: var(--ink-faint); }
+#fileInput{ display:none; }
+
+.file-chip{
+  display:none; align-items:center; gap:10px; margin-top:14px; padding:10px 14px;
+  background: rgba(61,169,252,.1); border:1px solid rgba(61,169,252,.3); border-radius:10px;
+  font-size:13px; color: var(--blue);
+}
+.file-chip.show{ display:flex; }
+.file-chip svg{ flex-shrink:0; }
+.file-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.btn{
+  width:100%; margin-top:18px; padding:13px; border:none; border-radius:11px;
+  background: linear-gradient(135deg, var(--blue), var(--violet)); color:#fff;
+  font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14.5px; cursor:pointer;
+  transition: all .2s ease; box-shadow: var(--glow-blue);
+}
+.btn:hover{ filter: brightness(1.08); transform: translateY(-1px); }
+.btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; filter:none; }
+
+.log{
+  margin-top:18px; font-size:12px; font-family: ui-monospace, monospace; color: var(--ink-soft);
+  background: rgba(0,0,0,.25); border:1px solid var(--border); border-radius:10px;
+  padding:12px 14px; max-height:200px; overflow-y:auto; display:none; line-height:1.6;
+}
+.log.show{ display:block; }
+.log .ok{ color: var(--green); }
+.log .warn{ color: var(--amber); }
+.log .err{ color: var(--red); }
+
+.download-box{
+  display:none; margin-top:18px; padding:18px; border-radius:12px;
+  background: var(--green-bg, rgba(45,212,167,.12)); border:1px solid rgba(45,212,167,.35); text-align:center;
+}
+.download-box.show{ display:block; }
+.download-box p{ margin:0 0 12px; font-size:13px; color: var(--ink); }
+.download-link{
+  display:inline-flex; align-items:center; gap:8px; padding:11px 22px; border-radius:10px;
+  background: var(--green); color:#04241B; font-weight:700; font-size:13.5px; text-decoration:none;
+}
+
+.gh-section{
+  margin-top:18px; padding-top:18px; border-top:1px solid var(--border);
+}
+.gh-toggle{
+  display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+  user-select:none;
+}
+.gh-toggle-title{ display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:700; color: var(--ink); }
+.gh-toggle-chev{ color: var(--ink-faint); transition: transform .2s ease; }
+.gh-toggle.open .gh-toggle-chev{ transform: rotate(180deg); }
+.gh-body{ display:none; margin-top:14px; }
+.gh-body.show{ display:block; }
+.gh-row{ display:flex; gap:10px; margin-bottom:10px; }
+.gh-field{ flex:1; }
+.gh-field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color: var(--ink-faint); margin-bottom:5px; }
+.gh-field input{
+  width:100%; padding:9px 11px; border-radius:9px; border:1px solid var(--border);
+  background: rgba(255,255,255,.03); color: var(--ink); font-size:13px; font-family:'Inter', sans-serif;
+}
+.gh-field input:focus{ outline:none; border-color: var(--blue); }
+.gh-field input::placeholder{ color: var(--ink-faint); }
+.gh-remember{ display:flex; align-items:center; gap:7px; font-size:12px; color: var(--ink-soft); margin-bottom:14px; }
+.gh-remember input{ accent-color: var(--blue); }
+.gh-help{ font-size:11px; color: var(--ink-faint); line-height:1.5; margin:-2px 0 14px; }
+.gh-help a{ color: var(--blue); }
+.btn-secondary{
+  background: rgba(255,255,255,.06); border:1px solid var(--border-strong); color: var(--ink);
+  box-shadow:none;
+}
+.btn-secondary:hover{ background: rgba(255,255,255,.1); }
+
+.foot-note{ margin-top:20px; font-size:11.5px; color: var(--ink-faint); text-align:center; line-height:1.6; }
+.back-link{
+  display:inline-flex; align-items:center; gap:6px; margin-bottom:18px;
+  font-size:12.5px; font-weight:600; color: var(--ink-soft); text-decoration:none;
+}
+.back-link:hover{ color: var(--blue-light, #6FC4FF); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="index.html">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Voltar ao painel
+  </a>
+  <div class="brand">
+    <div class="brand-mark">TI</div>
+    <div>
+      <div class="brand-title">Gerador de Painel</div>
+      <div class="brand-sub">Indicadores de TI — Grupo Martins</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h1>Atualizar o painel</h1>
+    <p class="lead">Arraste aqui a planilha exportada do Tom Ticket (a mesma usada sempre) e clique em gerar. Em alguns segundos você baixa o <strong>index.html</strong> atualizado, pronto para subir no GitHub.</p>
+
+    <div class="dropzone" id="dropzone">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="dz-title">Arraste a planilha aqui</div>
+      <div class="dz-sub">ou clique para selecionar — arquivo .xlsx</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </div>
+
+    <div class="file-chip" id="fileChip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 4H14L19 9V20H5V4Z" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span id="fileName"></span>
+    </div>
+
+    <button class="btn" id="genBtn" disabled>Gerar painel atualizado</button>
+
+    <div class="log" id="log"></div>
+
+    <div class="download-box" id="downloadBox">
+      <p>✅ Painel gerado com sucesso!</p>
+      <a class="download-link" id="downloadLink" download="index.html">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4M12 16L7 11M12 16L17 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Baixar index.html
+      </a>
+    </div>
+
+    <div class="gh-section">
+      <div class="gh-toggle" id="ghToggle">
+        <div class="gh-toggle-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.61-3.37-1.21-3.37-1.21-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05a9.36 9.36 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.95.68 1.92 0 1.39-.01 2.51-.01 2.85 0 .27.18.6.69.49A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/></svg>
+          Publicar direto no GitHub (opcional)
+        </div>
+        <svg class="gh-toggle-chev" width="11" height="7" viewBox="0 0 11 7" fill="none"><path d="M1 1L5.5 5.5L10 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="gh-body" id="ghBody">
+        <p class="gh-help">
+          Publica o <code>index.html</code> direto no seu repositório, sem precisar baixar e subir manualmente.
+          Precisa de um <strong>Personal Access Token</strong> do GitHub (veja como criar abaixo).
+          O token fica salvo só no seu navegador — nunca passa por mim.
+        </p>
+
+        <div class="gh-row">
+          <div class="gh-field">
+            <label>Usuário/Organização</label>
+            <input type="text" id="ghOwner" placeholder="elielson60" value="elielson60">
+          </div>
+          <div class="gh-field">
+            <label>Repositório</label>
+            <input type="text" id="ghRepo" placeholder="indicador_tecnologia-KPIs" value="indicador_tecnologia-KPIs">
+          </div>
+        </div>
+        <div class="gh-row">
+          <div class="gh-field">
+            <label>Branch</label>
+            <input type="text" id="ghBranch" placeholder="main" value="main">
+          </div>
+          <div class="gh-field">
+            <label>Caminho do arquivo</label>
+            <input type="text" id="ghPath" placeholder="index.html" value="index.html">
+          </div>
+        </div>
+        <div class="gh-field" style="margin-bottom:10px;">
+          <label>Personal Access Token</label>
+          <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <label class="gh-remember">
+          <input type="checkbox" id="ghRemember" checked>
+          Lembrar esses dados neste navegador
+        </label>
+
+        <button class="btn btn-secondary" id="ghPublishBtn" disabled>Publicar no GitHub</button>
+        <div class="log" id="ghLog"></div>
+
+        <p class="gh-help" style="margin-top:14px;">
+          <strong>Como criar o token (uma vez só):</strong><br>
+          1. Acesse <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">github.com/settings/personal-access-tokens/new</a><br>
+          2. Em "Repository access", escolha "Only select repositories" → selecione o seu repositório<br>
+          3. Em "Permissions → Repository permissions", defina <strong>Contents: Read and write</strong><br>
+          4. Clique em "Generate token" e cole o valor aqui em cima
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot-note">Tudo roda no seu navegador — a planilha não sai do seu computador.<br>Depois de gerar, baixe o arquivo ou publique direto no GitHub acima.</p>
+</div>
+
+<script src="gerador.js"></script>
+</body>
+</html>
