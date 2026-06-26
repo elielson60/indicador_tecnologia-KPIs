@@ -1871,8 +1871,15 @@ body{
   .toolbar-spacer{ display:none; }
   .result-count{ order:10; margin-top:6px; }
   .filter-trigger{ padding:8px 11px; font-size:12.5px; }
-  .filter-panel{ max-width: 88vw; }
-  .panel-periodo{ min-width: 0; width: min(310px, 88vw); }
+  /* Mobile: dropdown empurra conteúdo pra baixo em vez de flutuar por cima */
+  .filter-control{ width:100%; }
+  .filter-panel{
+    position:static; max-width:100%; width:100%;
+    border-radius:12px; margin-top:8px;
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,.5);
+  }
+  .filter-toolbar{ flex-wrap:wrap; }
+  .panel-periodo{ min-width:0; width:100%; }
   .month-year-grid{ grid-template-columns: repeat(4, 1fr); }
   .action-card{ padding:16px; }
   .brand-title{ font-size:16px; }
