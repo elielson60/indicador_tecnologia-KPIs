@@ -1861,31 +1861,59 @@ body{
   .span-2{grid-column: span 1;}
   .action-grid{grid-template-columns: 1fr;}
 }
-@media (max-width: 560px){
-  .kpi-grid{grid-template-columns: 1fr;}
+@media (max-width: 900px){
   .topbar-inner{padding:14px 18px; flex-direction:column; align-items:flex-start; gap:8px;}
   .topbar-meta{gap:12px;}
   .wrap{padding:16px 14px 50px;}
-  .filters{ position:relative; padding:14px 14px; z-index:35; }
-  .toolbar-eyebrow{ width:100%; margin-bottom:2px; }
-  .toolbar-spacer{ display:none; }
-  .result-count{ order:10; margin-top:6px; }
-  .filter-trigger{ padding:8px 11px; font-size:12.5px; }
-  /* Mobile: dropdown empurra conteúdo pra baixo em vez de flutuar por cima */
-  .filter-control{ width:100%; }
-  .filter-panel{
-    position:static; max-width:100%; width:100%;
-    border-radius:12px; margin-top:8px;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,.5);
+  .charts-grid{grid-template-columns: 1fr;}
+  .span-2{grid-column: span 1;}
+  .action-grid{grid-template-columns: 1fr;}
+
+  /* Filtros: faixa horizontal compacta */
+  .filters{
+    position:relative; top:auto; padding:10px 14px; z-index:35;
+    margin-bottom:12px; overflow:visible;
+    backdrop-filter:none; /* backdrop-filter quebra position:fixed nos filhos no mobile */
   }
-  .filter-toolbar{ flex-wrap:wrap; }
+  .filter-toolbar{ flex-wrap:nowrap; gap:7px; }
+  .toolbar-eyebrow{ display:none; }
+  .toolbar-spacer{ display:none; }
+  .result-count{ order:10; margin-left:auto; flex-shrink:0; font-size:11.5px; padding:5px 10px; }
+  .filter-trigger{ padding:7px 11px; font-size:12.5px; flex-shrink:0; white-space:nowrap; }
+
+  /* Dropdown: bottom sheet que sobe da base da tela */
+  .filter-control{ position:static; }
+  .filter-panel{
+    position:fixed; bottom:0; left:0; right:0; top:auto; z-index:200;
+    height:auto; max-height:80vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; border-bottom:none;
+    padding:8px 8px 24px;
+    animation: slideUp .22s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes slideUp{
+    from{ transform: translateY(100%); opacity:0; }
+    to{ transform: translateY(0); opacity:1; }
+  }
+  .filter-panel::before{
+    content:''; display:block; width:40px; height:4px; border-radius:999px;
+    background: rgba(255,255,255,.25); margin:0 auto 12px;
+  }
+  .filter-control.open .filter-panel{ z-index:200; }
   .panel-periodo{ min-width:0; width:100%; }
   .month-year-grid{ grid-template-columns: repeat(4, 1fr); }
   .action-card{ padding:16px; }
   .brand-title{ font-size:16px; }
 }
+@media (max-width: 900px) and (orientation: landscape){
+  .filter-panel{ max-height:90vh; }
+  .kpi-grid{grid-template-columns: repeat(2,1fr);}
+}
+@media (max-width: 560px){
+  .kpi-grid{grid-template-columns: 1fr;}
+}
 @media (max-width: 360px){
   .month-year-grid{ grid-template-columns: repeat(3, 1fr); }
+}
 }
 
 </style>
@@ -2165,13 +2193,36 @@ function registerControl(id){
     e.stopPropagation();
     const willOpen = !el.classList.contains('open');
     allControls.forEach(c=>c.classList.remove('open'));
-    if(willOpen){ el.classList.add('open'); clampPanelToViewport(el); }
+    if(willOpen){
+      el.classList.add('open');
+      clampPanelToViewport(el);
+      // Mostra overlay no mobile com pequeno delay para não colidir com document.click
+      if(window.innerWidth <= 900){
+        setTimeout(()=>{ updateOverlayClip(); showOverlay(); }, 15);
+      }
+    }
   });
   allControls.push(el);
   return el;
 }
-document.addEventListener('click', ()=> allControls.forEach(c=>c.classList.remove('open')));
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') allControls.forEach(c=>c.classList.remove('open')); });
+
+// Overlay real que cobre a tela atrás do drawer no mobile
+// Sem overlay separado — document.click já fecha o drawer ao tocar fora dele.
+// O CSS pseudo-elemento ::before (alça) e o background escuro são suficientes.
+function showOverlay(){}
+function hideOverlay(){}
+function updateOverlayClip(){}
+
+document.addEventListener('click', ()=>{
+  allControls.forEach(c=>c.classList.remove('open'));
+  hideOverlay();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='Escape'){
+    allControls.forEach(c=>c.classList.remove('open'));
+    hideOverlay();
+  }
+});
 
 const fcEmp = registerControl('fc-emp');
 const fcPri = registerControl('fc-pri');
