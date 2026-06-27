@@ -2133,7 +2133,7 @@ body{
         <h3>SLA de Resolução — cumprido x violado</h3>
         <span class="chart-tag">Rosca</span>
       </div>
-      <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartSLA"></canvas></div>
+      <div class="chart-canvas-wrap" style="height:180px"><canvas id="chartSLA"></canvas></div>
     </div>
 
     <div class="chart-card">
@@ -2141,7 +2141,7 @@ body{
         <h3>SLA de Inicialização — cumprido x violado</h3>
         <span class="chart-tag">Rosca</span>
       </div>
-      <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartSLAIni"></canvas></div>
+      <div class="chart-canvas-wrap" style="height:180px"><canvas id="chartSLAIni"></canvas></div>
     </div>
 
     <div class="chart-card span-2">
@@ -2195,7 +2195,7 @@ body{
     <div class="chart-card">
       <div class="chart-head">
         <h3>Qualidade da internet empresarial</h3>
-        <span class="chart-tag">Rosca</span>
+        <span class="chart-tag">Barras · Por empresa</span>
       </div>
       <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartInternet"></canvas></div>
     </div>
@@ -2997,27 +2997,106 @@ const chartMonthly = new Chart(ctxMonthly, {
 });
 
 const ctxSLA = document.getElementById('chartSLA').getContext('2d');
+const gaugePlugin = {
+  id:'gaugePlugin',
+  afterDraw(chart){
+    const {ctx, data, chartArea:{left,right,top,bottom,width,height}} = chart;
+    const cx = (left+right)/2, cy = bottom, r = Math.min(width/2, height)*0.82;
+    const val = data.datasets[0].data[0]||0;
+    const meta = data.datasets[0].meta||90;
+    const pct = Math.min(val/100,1);
+    const metaPct = Math.min(meta/100,1);
+    ctx.save();
+    // Arco de fundo
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI,0); ctx.lineWidth=r*0.22;
+    ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.stroke();
+    // Arco valor
+    const color = val>=meta ? '#2DD4A7' : val>=meta*0.85 ? '#FFB454' : '#FB5A73';
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI,-Math.PI+Math.PI*pct);
+    ctx.strokeStyle=color; ctx.lineWidth=r*0.22; ctx.lineCap='round'; ctx.stroke();
+    // Linha da meta (tracejada)
+    const metaAngle = -Math.PI + Math.PI*metaPct;
+    const mx1 = cx + (r-r*0.14)*Math.cos(metaAngle), my1 = cy + (r-r*0.14)*Math.sin(metaAngle);
+    const mx2 = cx + (r+r*0.14)*Math.cos(metaAngle), my2 = cy + (r+r*0.14)*Math.sin(metaAngle);
+    ctx.beginPath(); ctx.moveTo(mx1,my1); ctx.lineTo(mx2,my2);
+    ctx.strokeStyle='#FB5A73'; ctx.lineWidth=2; ctx.setLineDash([4,3]); ctx.stroke();
+    ctx.setLineDash([]);
+    // Texto central
+    ctx.fillStyle='#EAF2FF'; ctx.font='bold '+(r*0.38)+'px Space Grotesk,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(val.toFixed(1)+'%', cx, cy-r*0.22);
+    ctx.fillStyle='#93A4C2'; ctx.font=(r*0.18)+'px Inter,sans-serif';
+    ctx.fillText('meta '+meta+'%', cx, cy-r*0.22+r*0.26);
+    // Labels min/max
+    ctx.fillStyle='#5C6C8A'; ctx.font=(r*0.15)+'px Inter,sans-serif';
+    ctx.textAlign='left'; ctx.fillText('0%', left+2, cy+r*0.05);
+    ctx.textAlign='right'; ctx.fillText('100%', right-2, cy+r*0.05);
+    ctx.restore();
+  }
+};
 const chartSLA = new Chart(ctxSLA, {
   type:'doughnut',
-  data:{ labels:['SLA Resolução cumprido','SLA Resolução violado','Sem SLA'], datasets:[{ data:[0,0,0], backgroundColor:['#2DD4A7','#FB5A73','#475569'], borderColor:'#101A2E', borderWidth:3 }] },
-  options:{ responsive:true, maintainAspectRatio:false, cutout:'68%',
-    plugins:{ legend:{ position:'bottom' }, datalabels: dlSliceLabel } }
+  data:{ labels:['SLA Resolução cumprido','SLA Resolução violado','Sem SLA'],
+    datasets:[{ data:[0,0,0], meta:90, backgroundColor:['transparent','transparent','transparent'], borderWidth:0 }] },
+  options:{ responsive:true, maintainAspectRatio:false, rotation:-90, circumference:180, cutout:'72%',
+    plugins:{ legend:{display:false}, datalabels:{display:false}, tooltip:{enabled:false} } },
+  plugins:[gaugePlugin]
 });
 
 const ctxSLAIni = document.getElementById('chartSLAIni').getContext('2d');
+const gaugePluginIni = {
+  id:'gaugePluginIni',
+  afterDraw(chart){
+    const {ctx, data, chartArea:{left,right,top,bottom,width,height}} = chart;
+    const cx = (left+right)/2, cy = bottom, r = Math.min(width/2, height)*0.82;
+    const val = data.datasets[0].data[0]||0;
+    const meta = data.datasets[0].meta||70;
+    const pct = Math.min(val/100,1);
+    const metaPct = Math.min(meta/100,1);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI,0); ctx.lineWidth=r*0.22;
+    ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.stroke();
+    const color = val>=meta ? '#2DD4A7' : val>=meta*0.85 ? '#FFB454' : '#FB5A73';
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI,-Math.PI+Math.PI*pct);
+    ctx.strokeStyle=color; ctx.lineWidth=r*0.22; ctx.lineCap='round'; ctx.stroke();
+    const metaAngle = -Math.PI + Math.PI*metaPct;
+    const mx1 = cx + (r-r*0.14)*Math.cos(metaAngle), my1 = cy + (r-r*0.14)*Math.sin(metaAngle);
+    const mx2 = cx + (r+r*0.14)*Math.cos(metaAngle), my2 = cy + (r+r*0.14)*Math.sin(metaAngle);
+    ctx.beginPath(); ctx.moveTo(mx1,my1); ctx.lineTo(mx2,my2);
+    ctx.strokeStyle='#FB5A73'; ctx.lineWidth=2; ctx.setLineDash([4,3]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#EAF2FF'; ctx.font='bold '+(r*0.38)+'px Space Grotesk,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(val.toFixed(1)+'%', cx, cy-r*0.22);
+    ctx.fillStyle='#93A4C2'; ctx.font=(r*0.18)+'px Inter,sans-serif';
+    ctx.fillText('meta '+meta+'%', cx, cy-r*0.22+r*0.26);
+    ctx.fillStyle='#5C6C8A'; ctx.font=(r*0.15)+'px Inter,sans-serif';
+    ctx.textAlign='left'; ctx.fillText('0%', left+2, cy+r*0.05);
+    ctx.textAlign='right'; ctx.fillText('100%', right-2, cy+r*0.05);
+    ctx.restore();
+  }
+};
 const chartSLAIni = new Chart(ctxSLAIni, {
   type:'doughnut',
-  data:{ labels:['SLA Inicialização cumprido','SLA Inicialização violado','Sem SLA'], datasets:[{ data:[0,0,0], backgroundColor:['#3DA9FC','#FFB454','#475569'], borderColor:'#101A2E', borderWidth:3 }] },
-  options:{ responsive:true, maintainAspectRatio:false, cutout:'68%',
-    plugins:{ legend:{ position:'bottom' }, datalabels: dlSliceLabel } }
+  data:{ labels:['SLA Inicialização cumprido','SLA Inicialização violado','Sem SLA'],
+    datasets:[{ data:[0,0,0], meta:70, backgroundColor:['transparent','transparent','transparent'], borderWidth:0 }] },
+  options:{ responsive:true, maintainAspectRatio:false, rotation:-90, circumference:180, cutout:'72%',
+    plugins:{ legend:{display:false}, datalabels:{display:false}, tooltip:{enabled:false} } },
+  plugins:[gaugePluginIni]
 });
 
 const ctxCategoria = document.getElementById('chartCategoria').getContext('2d');
 const chartCategoria = new Chart(ctxCategoria, {
-  type:'pie',
-  data:{ labels:[], datasets:[{ data:[], backgroundColor:PALETTE, borderColor:'#101A2E', borderWidth:2 }] },
-  options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ position:'bottom', labels:{ font:{size:10.5} } }, datalabels: dlSliceLabel } }
+  type:'bar',
+  data:{ labels:[], datasets:[{ data:[], backgroundColor: PALETTE, borderRadius:5, maxBarThickness:22, borderSkipped:false }] },
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    layout:{ padding:{ right:60 } },
+    plugins:{ legend:{display:false}, datalabels: dlBarHLabel },
+    scales:{
+      x:{ beginAtZero:true, grid:{color:'rgba(255,255,255,.07)'}, grace:'14%', ticks:{precision:0} },
+      y:{ grid:{display:false}, ticks:{font:{size:11.5}, color:'#93A4C2'} }
+    }
+  }
 });
 
 const ctxUnidade = document.getElementById('chartUnidade').getContext('2d');
@@ -3053,29 +3132,149 @@ const chartSLAEvol = new Chart(ctxSLAEvol, {
 });
 
 const ctxPrioridade = document.getElementById('chartPrioridade').getContext('2d');
+const PRI_COLORS = {Urgente:'#FB5A73', Alta:'#FFB454', Normal:'#3DA9FC', Baixa:'#64748B'};
 const chartPrioridade = new Chart(ctxPrioridade, {
-  type:'doughnut',
-  data:{ labels:[], datasets:[{ data:[], backgroundColor:['#FB5A73','#FFB454','#3DA9FC','#64748B'], borderColor:'#101A2E', borderWidth:3 }] },
-  options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
-    plugins:{ legend:{ position:'bottom' }, datalabels: dlSliceLabel } }
+  type:'bar',
+  data:{ labels:[], datasets:[
+    { label:'Urgente', data:[], backgroundColor:'#FB5A73', borderWidth:0, borderRadius:0, maxBarThickness:22 },
+    { label:'Alta',    data:[], backgroundColor:'#FFB454', borderWidth:0, borderRadius:0, maxBarThickness:22 },
+    { label:'Normal',  data:[], backgroundColor:'#3DA9FC', borderWidth:0, borderRadius:0, maxBarThickness:22 },
+    { label:'Baixa',   data:[], backgroundColor:'#64748B', borderWidth:0, borderRadius:0, maxBarThickness:22 },
+  ]},
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ position:'bottom', labels:{ padding:12, boxWidth:10, boxHeight:10, font:{size:11.5}, color:'#93A4C2' } },
+      datalabels:{
+        display: ctx => (ctx.dataset.data[ctx.dataIndex]||0) > 5,
+        color:'#fff', font:{size:10, weight:'700'},
+        formatter: v => v ? v+'%' : ''
+      }
+    },
+    scales:{
+      x:{ stacked:true, beginAtZero:true, max:100, ticks:{callback:v=>v+'%', color:'#5C6C8A'}, grid:{color:'rgba(255,255,255,.07)'} },
+      y:{ stacked:true, grid:{display:false}, ticks:{color:'#93A4C2', font:{size:11}} }
+    }
+  }
 });
 
 const ctxSatisfacao = document.getElementById('chartSatisfacao').getContext('2d');
+const divergPlugin = {
+  id:'divergPlugin',
+  afterDraw(chart){
+    const {ctx, chartArea:{left,right,top,bottom,width}} = chart;
+    const cx = left + (right-left)*0.5;
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(cx, top+4); ctx.lineTo(cx, bottom-4);
+    ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+};
 const chartSatisfacao = new Chart(ctxSatisfacao, {
-  type:'pie',
-  data:{ labels:['Muito Satisfeito','Satisfeito','Regular','Insatisfeito','Muito Insatisfeito'],
-    datasets:[{ data:[0,0,0,0,0], backgroundColor:['#2DD4A7','#3DA9FC','#FFB454','#FB5A73','#9B2249'], borderColor:'#101A2E', borderWidth:2 }] },
-  options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ position:'bottom', labels:{ font:{size:10.5} } }, datalabels: dlSliceLabel } }
+  type:'bar',
+  data:{
+    labels:['Muito Satisfeito','Satisfeito','Regular','Insatisfeito','Muito Insatisfeito'],
+    datasets:[
+      { label:'Positivos', data:[0,0,0,0,0], backgroundColor:['#2DD4A7','#3DA9FC','#FFB454','#FB5A73','#9B3366'],
+        borderRadius:4, maxBarThickness:28 }
+    ]
+  },
+  options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    layout:{ padding:{ left:8, right:8 } },
+    plugins:{
+      legend:{display:false},
+      datalabels:{
+        color:'#EAF2FF', font:{size:11, weight:'700'},
+        anchor:'center', align:'center',
+        formatter: v => v ? v+'%' : ''
+      }
+    },
+    scales:{
+      x:{ beginAtZero:true, max:100, ticks:{callback:v=>v+'%', color:'#5C6C8A'}, grid:{color:'rgba(255,255,255,.07)'} },
+      y:{ grid:{display:false}, ticks:{color:'#93A4C2', font:{size:11.5}} }
+    }
+  },
+  plugins:[divergPlugin]
 });
 
 const ctxInternet = document.getElementById('chartInternet').getContext('2d');
+const internetSingleBarPlugin = {
+  id:'internetSingleBarPlugin',
+  afterDraw(chart){
+    const {ctx, chartArea:{left,right,top,bottom}} = chart;
+    const ds = chart.data.datasets;
+    const vals = ds.map(d=>d.data[0]||0);
+    const total = vals.reduce((s,v)=>s+v,0);
+    if(!total) return;
+    const colors = ['#2DD4A7','#FFB454','#FB5A73'];
+    const labels = ['Ótima / Boa','Regular','Ruim'];
+    const barH = Math.min(52, (bottom-top)*0.28);
+    const barY = top + (bottom-top)*0.18;
+    const barW = right - left;
+    ctx.save();
+    // Barra única empilhada
+    let x = left;
+    vals.forEach((v,i)=>{
+      const w = v/100 * barW;
+      ctx.fillStyle = colors[i];
+      if(i===0) { ctx.beginPath(); ctx.roundRect(x,barY,w,barH,6,0,0,6); ctx.fill(); }
+      else if(i===vals.length-1) { ctx.beginPath(); ctx.roundRect(x,barY,w,barH,0,6,6,0); ctx.fill(); }
+      else { ctx.fillRect(x,barY,w,barH); }
+      // Label dentro da barra se tiver espaço
+      if(w > 42){
+        ctx.fillStyle='rgba(0,0,0,.55)'; ctx.font='bold 13px Space Grotesk,sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(v+'%', x+w/2, barY+barH/2);
+      }
+      x += w;
+    });
+    // Linhas separadoras
+    x = left;
+    vals.forEach((v,i)=>{
+      x += v/100*barW;
+      if(i<vals.length-1 && v>0){
+        ctx.strokeStyle='#101A2E'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(x,barY); ctx.lineTo(x,barY+barH); ctx.stroke();
+      }
+    });
+    // Cards de resumo abaixo da barra
+    const cardY = barY + barH + 18;
+    const cardW = (right-left)/3;
+    vals.forEach((v,i)=>{
+      const cx = left + i*cardW + cardW/2;
+      // Ícone colorido
+      ctx.fillStyle = colors[i]; ctx.beginPath();
+      ctx.roundRect(cx-cardW/2+8, cardY, 8, 8, 2); ctx.fill();
+      // Label
+      ctx.fillStyle='#93A4C2'; ctx.font='11px Inter,sans-serif';
+      ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(labels[i], cx-cardW/2+22, cardY+4);
+      // Percentual grande
+      const pctColor = i===0?'#2DD4A7':i===1?'#FFB454':'#FB5A73';
+      ctx.fillStyle=pctColor; ctx.font='bold 22px Space Grotesk,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText(v+'%', cx, cardY+16);
+      // Total de respostas
+      const cnt = Math.round(v/100*(total||1));
+      ctx.fillStyle='#5C6C8A'; ctx.font='10px Inter,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='top';
+      ctx.fillText(cnt+' avaliações', cx, cardY+42);
+    });
+    ctx.restore();
+  }
+};
 const chartInternet = new Chart(ctxInternet, {
-  type:'doughnut',
-  data:{ labels:['Ótima','Bom/Boa','Ruim'],
-    datasets:[{ data:[0,0,0], backgroundColor:['#2DD4A7','#3DA9FC','#FB5A73'], borderColor:'#101A2E', borderWidth:3 }] },
-  options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
-    plugins:{ legend:{ position:'bottom' }, datalabels: dlSliceLabel } }
+  type:'bar',
+  data:{ labels:['Qualidade'], datasets:[
+    { label:'Ótima/Boa', data:[0], backgroundColor:'transparent' },
+    { label:'Regular',   data:[0], backgroundColor:'transparent' },
+    { label:'Ruim',      data:[0], backgroundColor:'transparent' },
+  ]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, datalabels:{display:false}, tooltip:{enabled:false} },
+    scales:{ x:{display:false}, y:{display:false} }
+  },
+  plugins:[internetSingleBarPlugin]
 });
 
 const ctxERP = document.getElementById('chartERP').getContext('2d');
@@ -3578,13 +3777,17 @@ function render(){
   chartMonthly.update();
   emptyState('chartMonthly', total===0);
 
-  /* ---- Chart: SLA Resolução donut ---- */
-  chartSLA.data.datasets[0].data = [slaOk, slaViol, slaNp];
+  /* ---- Chart: SLA Resolução gauge ---- */
+  const slaOkPct = (slaOk+slaViol) ? Math.round(slaOk/(slaOk+slaViol)*1000)/10 : 0;
+  chartSLA.data.datasets[0].data = [slaOkPct, 100-slaOkPct, 0];
+  chartSLA.data.datasets[0].meta = 90;
   chartSLA.update();
   emptyState('chartSLA', total===0);
 
-  /* ---- Chart: SLA Inicialização donut ---- */
-  chartSLAIni.data.datasets[0].data = [slaIniOk, slaIniViol, total - slaIniOk - slaIniViol];
+  /* ---- Chart: SLA Inicialização gauge ---- */
+  const slaIniOkPct = (slaIniOk+slaIniViol) ? Math.round(slaIniOk/(slaIniOk+slaIniViol)*1000)/10 : 0;
+  chartSLAIni.data.datasets[0].data = [slaIniOkPct, 100-slaIniOkPct, 0];
+  chartSLAIni.data.datasets[0].meta = 70;
   chartSLAIni.update();
   emptyState('chartSLAIni', total===0);
 
@@ -3592,8 +3795,10 @@ function render(){
   const catCount = {};
   data.forEach(t=>{ catCount[t.cat] = (catCount[t.cat]||0)+1; });
   const catSorted = Object.entries(catCount).sort((a,b)=>b[1]-a[1]);
-  chartCategoria.data.labels = catSorted.map(([k,v])=> (CAT_LABELS[k]||k) + ` (${v})`);
-  chartCategoria.data.datasets[0].data = catSorted.map(([,v])=>v);
+  const catTop = catSorted.slice(0,10);
+  chartCategoria.data.labels = catTop.map(([k,v])=> (CAT_LABELS[k]||k));
+  chartCategoria.data.datasets[0].data = catTop.map(([,v])=>v);
+  chartCategoria.data.datasets[0].backgroundColor = PALETTE.slice(0, catTop.length);
   chartCategoria.update();
   emptyState('chartCategoria', total===0);
 
@@ -3634,8 +3839,20 @@ function render(){
   data.forEach(t=>{ priCount[t.pri] = (priCount[t.pri]||0)+1; });
   const priOrder = ['Urgente','Alta','Normal','Baixa'].filter(p=>priCount[p]);
   Object.keys(priCount).forEach(p=>{ if(!priOrder.includes(p)) priOrder.push(p); });
-  chartPrioridade.data.labels = priOrder;
-  chartPrioridade.data.datasets[0].data = priOrder.map(p=>priCount[p]);
+  /* ---- Prioridade: barras empilhadas 100% por empresa ---- */
+  const empList = Object.keys(empCount);
+  const priLabels = ['Urgente','Alta','Normal','Baixa'];
+  const empPriCount = {};
+  empList.forEach(e=>{ empPriCount[e]={}; priLabels.forEach(p=>empPriCount[e][p]=0); });
+  data.forEach(t=>{ if(empPriCount[t.emp]) empPriCount[t.emp][t.pri]=(empPriCount[t.emp][t.pri]||0)+1; });
+  const empSortedPri = empList.sort((a,b)=>(empPriCount[b]['Urgente']||0)-(empPriCount[a]['Urgente']||0));
+  chartPrioridade.data.labels = empSortedPri;
+  priLabels.forEach((pri,i)=>{
+    chartPrioridade.data.datasets[i].data = empSortedPri.map(e=>{
+      const tot = priLabels.reduce((s,p)=>s+(empPriCount[e][p]||0),0);
+      return tot ? Math.round((empPriCount[e][pri]||0)/tot*100) : 0;
+    });
+  });
   chartPrioridade.update();
   emptyState('chartPrioridade', total===0);
 
@@ -3643,19 +3860,22 @@ function render(){
   const opOrder = ['Muito Satisfeito','Satisfeito','Regular','Insatisfeito','Muito Insatisfeito'];
   const opCount = {}; opOrder.forEach(o=>opCount[o]=0);
   data.forEach(t=>{ if(t.op && opCount.hasOwnProperty(t.op)) opCount[t.op]++; });
-  chartSatisfacao.data.datasets[0].data = opOrder.map(o=>opCount[o]);
+  const opTotal = opOrder.reduce((s,o)=>s+opCount[o],0);
+  chartSatisfacao.data.datasets[0].data = opTotal
+    ? opOrder.map(o=>Math.round(opCount[o]/opTotal*100))
+    : opOrder.map(()=>0);
   chartSatisfacao.update();
-  emptyState('chartSatisfacao', opOrder.reduce((s,o)=>s+opCount[o],0)===0);
+  emptyState('chartSatisfacao', opTotal===0);
 
-  /* ---- Chart: qualidade da internet ---- */
+  /* ---- Internet: barra única situação geral ---- */
   const netData = data.filter(t=>t.net);
-  let netOtima=0, netBomBoa=0, netRuim=0;
-  netData.forEach(t=>{
-    if(t.net==='Ótima') netOtima++;
-    else if(t.net==='Bom' || t.net==='Boa') netBomBoa++;
-    else if(t.net==='Ruim') netRuim++;
-  });
-  chartInternet.data.datasets[0].data = [netOtima, netBomBoa, netRuim];
+  const netTot = netData.length || 1;
+  const netBoa  = netData.filter(t=>t.net==='Ótima'||t.net==='Bom'||t.net==='Boa').length;
+  const netRuimCnt = netData.filter(t=>t.net==='Ruim').length;
+  const netReg  = netTot - netBoa - netRuimCnt;
+  chartInternet.data.datasets[0].data = [Math.round(netBoa/netTot*100)];
+  chartInternet.data.datasets[1].data = [Math.round(netReg/netTot*100)];
+  chartInternet.data.datasets[2].data = [Math.round(netRuimCnt/netTot*100)];
   chartInternet.update();
   emptyState('chartInternet', netData.length===0);
 
