@@ -2042,6 +2042,16 @@ body{
   .chart-canvas-wrap{ height: clamp(300px, 85vw, 380px) !important; }
   /* Gráficos span-2 (linha, WiFi) — um pouco menos alto para dar proporção correta */
   .span-2 .chart-canvas-wrap{ height: clamp(260px, 60vw, 320px) !important; }
+  /* Trio SLA + Internet: colapsa para 1 coluna no mobile */
+  .span-2[style*="repeat(3"]{
+    display:block !important;
+  }
+  .span-2[style*="repeat(3"] .chart-card{
+    margin-bottom:14px;
+  }
+  .span-2[style*="repeat(3"] .chart-canvas-wrap{
+    height:180px !important;
+  }
   .brand-title{ font-size:16px; }
 }
 @media (max-width: 900px) and (orientation: landscape){
@@ -2128,20 +2138,32 @@ body{
       <div class="chart-canvas-wrap" style="height:380px"><canvas id="chartMonthly"></canvas></div>
     </div>
 
-    <div class="chart-card">
-      <div class="chart-head">
-        <h3>SLA de Resolução — cumprido x violado</h3>
-        <span class="chart-tag">Rosca</span>
-      </div>
-      <div class="chart-canvas-wrap" style="height:180px"><canvas id="chartSLA"></canvas></div>
-    </div>
+    <div class="span-2" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;">
 
-    <div class="chart-card">
-      <div class="chart-head">
-        <h3>SLA de Inicialização — cumprido x violado</h3>
-        <span class="chart-tag">Rosca</span>
+      <div class="chart-card">
+        <div class="chart-head">
+          <h3>SLA de Resolução — cumprido x violado</h3>
+          <span class="chart-tag">Gauge</span>
+        </div>
+        <div class="chart-canvas-wrap" style="height:180px"><canvas id="chartSLA"></canvas></div>
       </div>
-      <div class="chart-canvas-wrap" style="height:180px"><canvas id="chartSLAIni"></canvas></div>
+
+      <div class="chart-card">
+        <div class="chart-head">
+          <h3>SLA de Inicialização — cumprido x violado</h3>
+          <span class="chart-tag">Gauge</span>
+        </div>
+        <div class="chart-canvas-wrap" style="height:180px"><canvas id="chartSLAIni"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-head">
+          <h3>Qualidade da internet empresarial</h3>
+          <span class="chart-tag">Situação geral</span>
+        </div>
+        <div class="chart-canvas-wrap" style="height:180px"><canvas id="chartInternet"></canvas></div>
+      </div>
+
     </div>
 
     <div class="chart-card span-2">
@@ -2192,13 +2214,6 @@ body{
       <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartSatisfacao"></canvas></div>
     </div>
 
-    <div class="chart-card">
-      <div class="chart-head">
-        <h3>Qualidade da internet empresarial</h3>
-        <span class="chart-tag">Barras · Por empresa</span>
-      </div>
-      <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartInternet"></canvas></div>
-    </div>
 
     <div class="chart-card">
       <div class="chart-head">
