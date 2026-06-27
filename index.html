@@ -1986,6 +1986,25 @@ body{
 .foot strong{ color: var(--text-soft); font-weight:700; }
 .foot-divider{ opacity:.6; }
 
+/* Card críticos — hover */
+#cardCriticos:hover{ border-color:rgba(251,90,115,.4); box-shadow:0 0 0 1px rgba(251,90,115,.15) inset, var(--shadow); }
+
+
+/* Tabela de chamados críticos */
+.criticos-table{ width:100%; border-collapse:collapse; font-size:13px; }
+.criticos-table th{ font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); background:rgba(255,255,255,.02); }
+.criticos-table td{ padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; }
+.criticos-table tr:last-child td{ border-bottom:none; }
+.criticos-table tr:hover td{ background:rgba(255,255,255,.03); }
+.criticos-id{ font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--blue-light,#6FC4FF); font-size:12px; }
+.criticos-assunto{ color:var(--ink); font-weight:500; }
+.criticos-emp{ color:var(--ink-soft); }
+.criticos-sit{ font-size:11.5px; color:var(--ink-faint); }
+.criticos-atr{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:999px; }
+.atr-sim{ background:rgba(251,90,115,.15); color:#FB5A73; }
+.atr-nao{ background:rgba(45,212,167,.1); color:#2DD4A7; }
+.criticos-dias{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; }
+
 /* ===== View Switcher ===== */
 .view-switcher{
   margin-bottom:14px; display:flex; align-items:center;
@@ -2018,6 +2037,11 @@ body.view-diretoria [data-view="gerente"]{ display:none !important; }
 .dir-cards-grid{
   display:grid; grid-template-columns:repeat(4,1fr); gap:14px;
 }
+.dir-card-criticos{
+  border-color:rgba(251,90,115,.25) !important;
+}
+.dir-card-criticos::before{ background:var(--red,#FB5A73) !important; }
+.dir-card-criticos:hover{ border-color:rgba(251,90,115,.5) !important; box-shadow:0 0 0 1px rgba(251,90,115,.15) inset, var(--shadow) !important; }
 .dir-card{
   background: linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.012)), var(--surface);
   border:1px solid var(--border); border-radius:var(--radius);
@@ -2234,18 +2258,11 @@ body.view-diretoria [data-view="gerente"]{ display:none !important; }
         <div class="dir-card-label">Variação vs mês anterior</div>
         <div class="dir-delta-grid" id="dirDeltaGrid"></div>
       </div>
+
     </div>
   </section>
 
   <section class="charts-grid">
-    <div class="chart-card span-2">
-      <div class="chart-head">
-        <h3>Evolução mensal — abertos x encerrados</h3>
-        <span class="chart-tag">Linha</span>
-      </div>
-      <div class="chart-canvas-wrap" style="height:380px"><canvas id="chartMonthly"></canvas></div>
-    </div>
-
     <div class="span-2" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;">
 
       <div class="chart-card">
@@ -2314,6 +2331,30 @@ body.view-diretoria [data-view="gerente"]{ display:none !important; }
       <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartPrioridade"></canvas></div>
     </div>
 
+    <!-- ===== BLOCO EXCLUSIVO DIRETORIA ===== -->
+
+    <!-- Modal de Detalhes dos Chamados Críticos -->
+    <div class="modal-overlay" id="criticosOverlay">
+      <div class="modal-panel" style="max-width:860px;">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title" id="criticosModalTitle">🚨 Chamados Críticos em Aberto</div>
+            <div class="modal-sub" id="criticosModalSub"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-print" onclick="window.print()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6v-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Imprimir
+            </button>
+            <button class="modal-close" onclick="document.getElementById('criticosOverlay').classList.remove('show')">✕</button>
+          </div>
+        </div>
+        <div class="modal-table-wrap" id="criticosModalBody"></div>
+      </div>
+    </div>
+
+    <!-- ===== FIM BLOCO DIRETORIA ===== -->
+
     <div class="chart-card">
       <div class="chart-head">
         <h3>Satisfação de atendimento</h3>
@@ -2347,12 +2388,36 @@ body.view-diretoria [data-view="gerente"]{ display:none !important; }
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartAplicativo"></canvas></div>
     </div>
 
-    <div class="chart-card">
+    <div class="chart-card" id="cardTempoEntrega">
       <div class="chart-head">
         <h3>Tempo de entrega de demandas</h3>
         <span class="chart-tag">Distribuição · Prazo</span>
       </div>
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartTempoEntrega"></canvas></div>
+    </div>
+
+    <!-- Card Chamados Críticos — ao lado do Tempo de Entrega, Diretoria -->
+    <div class="chart-card" data-view="diretoria" id="cardCriticos"
+         style="cursor:pointer;" onclick="openCriticosModal()">
+      <div class="chart-head">
+        <h3>Chamados críticos em aberto</h3>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="chart-tag">Risco imediato</span>
+          <span style="font-size:11px;color:var(--blue-light,#6FC4FF);display:flex;align-items:center;gap:3px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            clique para detalhes
+          </span>
+        </div>
+      </div>
+      <div id="criticosBody" style="padding:14px 18px;min-height:300px;"></div>
+    </div>
+
+    <div class="chart-card span-2">
+      <div class="chart-head">
+        <h3>Evolução mensal — abertos x encerrados</h3>
+        <span class="chart-tag">Linha</span>
+      </div>
+      <div class="chart-canvas-wrap" style="height:380px"><canvas id="chartMonthly"></canvas></div>
     </div>
 
     <div class="chart-card span-2" data-view="gerente">
@@ -3914,6 +3979,97 @@ document.getElementById('relatorioOverlay')?.addEventListener('click', function(
   if(e.target === this) this.classList.remove('show');
 });
 
+/* ====== Gráficos exclusivos Diretoria ====== */
+
+
+/* ====== Modal de Chamados Críticos ====== */
+function openCriticosModal(){
+  const overlay = document.getElementById('criticosOverlay');
+  const body = document.getElementById('criticosModalBody');
+  const sub = document.getElementById('criticosModalSub');
+  if(!overlay || !body) return;
+
+  const data = getFiltered();
+  const abertos = data.filter(t=>!t.fin);
+  const urgentes = abertos.filter(t=>t.pri==='Urgente');
+  const altas = abertos.filter(t=>t.pri==='Alta');
+  const criticos = [...urgentes, ...altas].sort((a,b)=>{
+    // Ordenar por: mais antigos primeiro (maior risco)
+    return new Date(a.criado||0) - new Date(b.criado||0);
+  });
+
+  sub.textContent = `${urgentes.length} urgentes · ${altas.length} alta prioridade · Gerado em ${fmtNow()}`;
+
+  function diasAberto(criado){
+    if(!criado) return null;
+    const diff = Date.now() - new Date(criado).getTime();
+    return Math.floor(diff / (1000*60*60*24));
+  }
+  function fmtData(iso){
+    if(!iso) return '—';
+    const d = new Date(iso);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  }
+  function corDias(n){
+    if(n===null) return 'var(--ink-faint)';
+    if(n > 30) return '#FB5A73';
+    if(n > 7) return '#FFB454';
+    return '#EAF2FF';
+  }
+
+  if(criticos.length === 0){
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-soft);">✅ Nenhum chamado crítico em aberto no momento.</div>';
+  } else {
+    body.innerHTML = `
+      <table class="criticos-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Assunto</th>
+            <th>Empresa</th>
+            <th>Categoria</th>
+            <th>Abertura</th>
+            <th>Dias aberto</th>
+            <th>Situação</th>
+            <th>SLA</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${criticos.map(t=>{
+            const dias = diasAberto(t.criado);
+            const priBadge = t.pri==='Urgente'
+              ? '<span class="atr-sim" style="margin-right:4px;">URGENTE</span>'
+              : '<span style="background:rgba(255,180,84,.15);color:#FFB454;display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;margin-right:4px;">ALTA</span>';
+            const slaStatus = t.atr
+              ? '<span class="atr-sim">⚠ Atrasado</span>'
+              : '<span class="atr-nao">✓ No prazo</span>';
+            const slaD = t.slaD==='Sim'
+              ? '<span style="color:#2DD4A7;font-size:11px;">✓ Cumprido</span>'
+              : t.slaD==='Não'
+              ? '<span style="color:#FB5A73;font-size:11px;">✗ Violado</span>'
+              : '<span style="color:var(--ink-faint);font-size:11px;">—</span>';
+            return `<tr>
+              <td><span class="criticos-id">#${t.id}</span></td>
+              <td><div style="display:flex;align-items:flex-start;gap:6px;flex-direction:column;">${priBadge}<span class="criticos-assunto">${t.assunto||'—'}</span></div></td>
+              <td class="criticos-emp">${t.emp||'—'}</td>
+              <td class="criticos-sit">${CAT_LABELS[t.cat]||t.cat||'—'}</td>
+              <td style="color:var(--ink-soft);font-size:12px;white-space:nowrap;">${fmtData(t.criado)}</td>
+              <td><span class="criticos-dias" style="color:${corDias(dias)};">${dias!==null?dias+'d':'—'}</span></td>
+              <td>${slaStatus}</td>
+              <td>${slaD}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+  overlay.classList.add('show');
+}
+
+document.getElementById('criticosOverlay')?.addEventListener('click', function(e){
+  if(e.target === this) this.classList.remove('show');
+});
+
 /* ====== Switcher de Visão: Diretoria / Gerente TI ====== */
 (function(){
   const saved = localStorage.getItem('painelTI_view') || 'diretoria';
@@ -3943,76 +4099,60 @@ function setView(view){
 function updateDiretoriaSection(data, allData){
   if(!document.getElementById('sectionDiretoria')) return;
 
-  /* --- 1. Custo estimado SLA violado --- */
-  const HRS_POR_VIOLACAO = 2; // estimativa média: 2h improdutivas por violação
+  const HRS_POR_VIOLACAO = 2;
   const slaViolTotal = data.filter(t=>t.slaD==='Não').length;
   const hrsImprod = slaViolTotal * HRS_POR_VIOLACAO;
-  document.getElementById('dirCustoValue').textContent = hrsImprod.toLocaleString('pt-BR') + 'h';
-  document.getElementById('dirCustoSub').textContent =
-    `${slaViolTotal} violações × ${HRS_POR_VIOLACAO}h estimadas por violação`;
+  const elCusto = document.getElementById('dirCustoValue');
+  const elCustoSub = document.getElementById('dirCustoSub');
+  if(elCusto) elCusto.textContent = hrsImprod.toLocaleString('pt-BR') + 'h';
+  if(elCustoSub) elCustoSub.textContent = slaViolTotal+' violações × '+HRS_POR_VIOLACAO+'h estimadas';
 
-  /* --- 2. Índice de reincidência --- */
   const clienteCatMap = {};
-  data.forEach(t=>{
-    const key = (t.cliente||'') + '||' + (t.cat||'');
-    clienteCatMap[key] = (clienteCatMap[key]||0)+1;
-  });
+  data.forEach(t=>{ const key=(t.cliente||'')+'||'+( t.cat||''); clienteCatMap[key]=(clienteCatMap[key]||0)+1; });
   const reincidentes = Object.values(clienteCatMap).filter(v=>v>1).length;
   const totalPares = Object.keys(clienteCatMap).length;
   const reincidPct = totalPares ? Math.round(reincidentes/totalPares*100) : 0;
-  document.getElementById('dirReincidValue').textContent = reincidPct + '%';
-  document.getElementById('dirReincidSub').textContent =
-    `${reincidentes} combinações usuário+categoria repetidas`;
+  const elR = document.getElementById('dirReincidValue'); if(elR) elR.textContent = reincidPct+'%';
+  const elRS = document.getElementById('dirReincidSub'); if(elRS) elRS.textContent = reincidentes+' combinações usuário+categoria repetidas';
 
-  /* --- 3. Top 3 causas raiz --- */
   const catCount = {};
   data.forEach(t=>{ catCount[t.cat]=(catCount[t.cat]||0)+1; });
   const top3 = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,3);
   const medals = ['🥇','🥈','🥉'];
   const list = document.getElementById('dirTop3List');
-  list.innerHTML = top3.map(([cat,n],i)=>`
-    <div class="dir-top3-item">
-      <span class="dir-top3-rank">${medals[i]}</span>
-      <span class="dir-top3-name">${CAT_LABELS[cat]||cat}</span>
-      <span class="dir-top3-count">${n}</span>
-    </div>
-  `).join('');
+  if(list) list.innerHTML = top3.map(([cat,n],i)=>`<div class="dir-top3-item"><span class="dir-top3-rank">${medals[i]}</span><span class="dir-top3-name">${CAT_LABELS[cat]||cat}</span><span class="dir-top3-count">${n}</span></div>`).join('');
 
-  /* --- 4. Variação vs mês anterior --- */
   const sortedMonths = [...ALL_MONTHS].sort();
   const lastM = sortedMonths[sortedMonths.length-1];
   const prevM = sortedMonths[sortedMonths.length-2];
   if(lastM && prevM){
-    const curr = data.filter(t=>t.mes===lastM);
-    const prev = data.filter(t=>t.mes===prevM);
+    const curr = data.filter(t=>t.mes===lastM), prev = data.filter(t=>t.mes===prevM);
     const metrics = [
-      { label:'Chamados',  curr:curr.length,                                  prev:prev.length },
-      { label:'Fechados',  curr:curr.filter(t=>t.fin).length,                 prev:prev.filter(t=>t.fin).length },
-      { label:'SLA Res.',  curr:curr.filter(t=>t.slaD==='Sim').length,        prev:prev.filter(t=>t.slaD==='Sim').length, isPct:true, tot_c:curr.filter(t=>t.slaD!=='Não possui').length, tot_p:prev.filter(t=>t.slaD!=='Não possui').length },
+      { label:'Chamados', curr:curr.length, prev:prev.length },
+      { label:'Fechados', curr:curr.filter(t=>t.fin).length, prev:prev.filter(t=>t.fin).length },
+      { label:'SLA Res.', curr:curr.filter(t=>t.slaD==='Sim').length, prev:prev.filter(t=>t.slaD==='Sim').length, isPct:true, tot_c:curr.filter(t=>t.slaD!=='Não possui').length, tot_p:prev.filter(t=>t.slaD!=='Não possui').length },
     ];
     const grid = document.getElementById('dirDeltaGrid');
-    grid.innerHTML = metrics.map(m=>{
+    if(grid) grid.innerHTML = metrics.map(m=>{
       let delta, txt, cls;
-      if(m.isPct){
-        const c = m.tot_c ? Math.round(m.curr/m.tot_c*100) : 0;
-        const p = m.tot_p ? Math.round(m.prev/m.tot_p*100) : 0;
-        delta = c-p;
-        txt = `${c}% (${delta>=0?'+':''}${delta}pp)`;
-        cls = delta>=0 ? 'dir-delta-up' : 'dir-delta-down';
-      } else {
-        delta = m.curr - m.prev;
-        const pct = m.prev ? Math.round(Math.abs(delta)/m.prev*100) : 0;
-        txt = `${m.curr} (${delta>=0?'+':''}${delta})`;
-        cls = m.label==='Chamados'
-          ? (delta<=0?'dir-delta-up':'dir-delta-down')
-          : (delta>=0?'dir-delta-up':'dir-delta-down');
-      }
-      const arrow = delta>0?'↑':delta<0?'↓':'→';
-      return `<div class="dir-delta-item">
-        <span class="dir-delta-label">${m.label} (${fmtMes(lastM)})</span>
-        <span class="dir-delta-val ${cls}">${arrow} ${txt}</span>
-      </div>`;
+      if(m.isPct){ const c=m.tot_c?Math.round(m.curr/m.tot_c*100):0, p=m.tot_p?Math.round(m.prev/m.tot_p*100):0; delta=c-p; txt=c+'% ('+(delta>=0?'+':'')+delta+'pp)'; cls=delta>=0?'dir-delta-up':'dir-delta-down'; }
+      else { delta=m.curr-m.prev; txt=m.curr+' ('+(delta>=0?'+':'')+delta+')'; cls=m.label==='Chamados'?(delta<=0?'dir-delta-up':'dir-delta-down'):(delta>=0?'dir-delta-up':'dir-delta-down'); }
+      const arrow=delta>0?'↑':delta<0?'↓':'→';
+      return `<div class="dir-delta-item"><span class="dir-delta-label">${m.label} (${fmtMes(lastM)})</span><span class="dir-delta-val ${cls}">${arrow} ${txt}</span></div>`;
     }).join('');
+  }
+
+  /* Card: Chamados críticos em aberto */
+  const criticosBody=document.getElementById('criticosBody');
+  if(criticosBody){
+    const abertos=data.filter(t=>!t.fin), urgentes=abertos.filter(t=>t.pri==='Urgente');
+    const altas=abertos.filter(t=>t.pri==='Alta');
+    const empUrgMap={}; urgentes.forEach(t=>{ empUrgMap[t.emp]=(empUrgMap[t.emp]||0)+1; });
+    const empUrgSorted=Object.entries(empUrgMap).sort((a,b)=>b[1]-a[1]);
+    const cor=urgentes.length===0?'#2DD4A7':urgentes.length<=5?'#FFB454':'#FB5A73';
+    criticosBody.innerHTML=`<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px;"><span style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;color:${cor};line-height:1;">${urgentes.length}</span><span style="font-size:13px;color:#93A4C2;">urgentes em aberto</span></div>`
+      +empUrgSorted.slice(0,5).map(([emp,n])=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(251,90,115,.15);color:#FB5A73;">URGENTE</span><span style="flex:1;font-size:12.5px;color:#EAF2FF;">${emp}</span><span style="font-size:12px;font-weight:700;color:#93A4C2;">${n} aberto${n>1?'s':''}</span></div>`).join('')
+      +(altas.length>0?`<div style="margin-top:8px;font-size:11.5px;color:#FFB454;">+ ${altas.length} chamado${altas.length>1?'s':''} de prioridade Alta em aberto</div>`:'');
   }
 }
 
