@@ -1986,6 +1986,69 @@ body{
 .foot strong{ color: var(--text-soft); font-weight:700; }
 .foot-divider{ opacity:.6; }
 
+/* ===== View Switcher ===== */
+.view-switcher{
+  margin-bottom:14px; display:flex; align-items:center;
+}
+.view-switcher-inner{
+  display:flex; align-items:center; gap:10px;
+  background: linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.012)), var(--surface);
+  border:1px solid var(--border); border-radius:14px;
+  padding:8px 14px; box-shadow: var(--shadow);
+}
+.view-label{ font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); }
+.view-tabs{ display:flex; gap:4px; background:rgba(255,255,255,.04); border-radius:10px; padding:3px; }
+.view-btn{
+  display:flex; align-items:center; gap:6px; padding:7px 16px;
+  border:none; border-radius:8px; font-size:13px; font-weight:700;
+  cursor:pointer; background:transparent; color:var(--ink-soft); transition:all .18s ease;
+}
+.view-btn:hover{ color:var(--ink); }
+.view-btn.active{
+  background: linear-gradient(135deg, var(--blue), var(--violet));
+  color:#fff; box-shadow: var(--glow-blue);
+}
+
+/* hide/show por visão */
+body.view-gerente [data-view="diretoria"]{ display:none !important; }
+body.view-diretoria [data-view="gerente"]{ display:none !important; }
+
+/* ===== Seção exclusiva Diretoria ===== */
+.dir-section{ margin-bottom:20px; }
+.dir-cards-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:14px;
+}
+.dir-card{
+  background: linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,.012)), var(--surface);
+  border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px 20px; box-shadow: var(--shadow); position:relative; overflow:hidden;
+}
+.dir-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--blue); box-shadow:0 0 16px 1px var(--blue); }
+.dir-card-icon{ font-size:20px; margin-bottom:8px; }
+.dir-card-label{ font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
+.dir-card-value{ font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--ink); line-height:1.1; margin-bottom:4px; }
+.dir-card-sub{ font-size:12px; color:var(--ink-faint); }
+.dir-card-top3{ display:flex; flex-direction:column; gap:7px; margin-top:4px; }
+.dir-top3-item{ display:flex; align-items:center; gap:8px; }
+.dir-top3-rank{ font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:700; color:var(--blue-light); min-width:18px; }
+.dir-top3-name{ font-size:12.5px; color:var(--ink-soft); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dir-top3-count{ font-size:12px; font-weight:700; color:var(--ink-faint); }
+.dir-delta-grid{ display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+.dir-delta-item{ display:flex; align-items:center; gap:7px; }
+.dir-delta-label{ font-size:11.5px; color:var(--ink-soft); flex:1; }
+.dir-delta-val{ font-size:13px; font-weight:700; }
+.dir-delta-up{ color:var(--green); }
+.dir-delta-down{ color:var(--red); }
+.dir-delta-neu{ color:var(--ink-faint); }
+
+@media (max-width:900px){
+  .dir-cards-grid{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:560px){
+  .dir-cards-grid{ grid-template-columns:1fr; }
+  .view-switcher-inner{ flex-direction:column; align-items:flex-start; gap:8px; }
+}
+
 @media (max-width: 980px){
   .kpi-grid{grid-template-columns: repeat(2,1fr);}
   .charts-grid{grid-template-columns: 1fr;}
@@ -2127,7 +2190,52 @@ body{
     <div class="active-filters" id="activeFilters"></div>
   </section>
 
+  <!-- Switcher Diretoria / Gerente TI -->
+  <div class="view-switcher" id="viewSwitcher">
+    <div class="view-switcher-inner">
+      <span class="view-label">Visão:</span>
+      <div class="view-tabs">
+        <button class="view-btn active" id="btnDiretoria" onclick="setView('diretoria')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 3h18v4H3zM3 10h8v11H3zM13 10h8v11h-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          Diretoria
+        </button>
+        <button class="view-btn" id="btnGerente" onclick="setView('gerente')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Gerente de TI
+        </button>
+      </div>
+    </div>
+  </div>
+
   <section class="kpi-grid" id="kpiGrid"></section>
+
+  <!-- Seção exclusiva Diretoria: 4 novos indicadores -->
+  <section class="dir-section" data-view="diretoria" id="sectionDiretoria">
+    <div class="dir-cards-grid">
+      <div class="dir-card" id="dirCardCusto">
+        <div class="dir-card-icon">💸</div>
+        <div class="dir-card-label">Impacto estimado — SLA violado</div>
+        <div class="dir-card-value" id="dirCustoValue">—</div>
+        <div class="dir-card-sub" id="dirCustoSub">horas improdutivas estimadas</div>
+      </div>
+      <div class="dir-card" id="dirCardReincid">
+        <div class="dir-card-icon">🔁</div>
+        <div class="dir-card-label">Índice de reincidência</div>
+        <div class="dir-card-value" id="dirReincidValue">—</div>
+        <div class="dir-card-sub" id="dirReincidSub">usuários com chamados repetidos</div>
+      </div>
+      <div class="dir-card" id="dirCardTop3">
+        <div class="dir-card-icon">📌</div>
+        <div class="dir-card-label">Top 3 causas raiz</div>
+        <div class="dir-card-top3" id="dirTop3List"></div>
+      </div>
+      <div class="dir-card" id="dirCardDelta">
+        <div class="dir-card-icon">📈</div>
+        <div class="dir-card-label">Variação vs mês anterior</div>
+        <div class="dir-delta-grid" id="dirDeltaGrid"></div>
+      </div>
+    </div>
+  </section>
 
   <section class="charts-grid">
     <div class="chart-card span-2">
@@ -2166,7 +2274,7 @@ body{
 
     </div>
 
-    <div class="chart-card span-2">
+    <div class="chart-card span-2" data-view="gerente">
       <div class="chart-head">
         <h3>Chamados por categoria</h3>
         <span class="chart-tag">Pizza</span>
@@ -2182,7 +2290,7 @@ body{
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartUnidade"></canvas></div>
     </div>
 
-    <div class="chart-card">
+    <div class="chart-card" data-view="gerente">
       <div class="chart-head">
         <h3>Backlog por empresa</h3>
         <span class="chart-tag">Colunas</span>
@@ -2190,7 +2298,7 @@ body{
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartBacklog"></canvas></div>
     </div>
 
-    <div class="chart-card span-2">
+    <div class="chart-card span-2" data-view="gerente">
       <div class="chart-head">
         <h3>Evolução mensal do SLA de Resolução cumprido</h3>
         <span class="chart-tag">Linha · Meta 90%</span>
@@ -2198,7 +2306,7 @@ body{
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartSLAEvol"></canvas></div>
     </div>
 
-    <div class="chart-card">
+    <div class="chart-card" data-view="gerente">
       <div class="chart-head">
         <h3>Distribuição por prioridade</h3>
         <span class="chart-tag">Rosca</span>
@@ -2215,7 +2323,7 @@ body{
     </div>
 
 
-    <div class="chart-card">
+    <div class="chart-card" data-view="gerente">
       <div class="chart-head">
         <h3>Chamados por ERP</h3>
         <span class="chart-tag">Barras</span>
@@ -2223,7 +2331,7 @@ body{
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartERP"></canvas></div>
     </div>
 
-    <div class="chart-card">
+    <div class="chart-card" data-view="gerente">
       <div class="chart-head">
         <h3>Chamados por equipamento</h3>
         <span class="chart-tag">Barras</span>
@@ -2231,7 +2339,7 @@ body{
       <div class="chart-canvas-wrap" style="height:300px"><canvas id="chartEquipamento"></canvas></div>
     </div>
 
-    <div class="chart-card">
+    <div class="chart-card" data-view="gerente">
       <div class="chart-head">
         <h3>Chamados por aplicativo</h3>
         <span class="chart-tag">Barras</span>
@@ -2247,7 +2355,7 @@ body{
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartTempoEntrega"></canvas></div>
     </div>
 
-    <div class="chart-card span-2">
+    <div class="chart-card span-2" data-view="gerente">
       <div class="chart-head">
         <h3>Pesquisa de WiFi — Hotel Prive do Atalaia</h3>
         <span class="chart-tag">Barras 100% · Hóspedes</span>
@@ -3806,6 +3914,108 @@ document.getElementById('relatorioOverlay')?.addEventListener('click', function(
   if(e.target === this) this.classList.remove('show');
 });
 
+/* ====== Switcher de Visão: Diretoria / Gerente TI ====== */
+(function(){
+  const saved = localStorage.getItem('painelTI_view') || 'diretoria';
+  document.body.className = document.body.className.replace(/view-\w+/g,'').trim();
+  document.body.classList.add('view-' + saved);
+  const btnDir = document.getElementById('btnDiretoria');
+  const btnGer = document.getElementById('btnGerente');
+  if(btnDir) btnDir.classList.toggle('active', saved==='diretoria');
+  if(btnGer) btnGer.classList.toggle('active', saved==='gerente');
+})();
+
+function setView(view){
+  document.body.className = document.body.className.replace(/view-\w+/g,'').trim();
+  document.body.classList.add('view-' + view);
+  localStorage.setItem('painelTI_view', view);
+  const btnDir = document.getElementById('btnDiretoria');
+  const btnGer = document.getElementById('btnGerente');
+  if(btnDir) btnDir.classList.toggle('active', view==='diretoria');
+  if(btnGer) btnGer.classList.toggle('active', view==='gerente');
+  // Forçar redraw dos charts visíveis
+  setTimeout(()=>{
+    Object.values(Chart.instances||{}).forEach(c=>{ try{ c.resize(); }catch(e){} });
+  }, 50);
+}
+
+/* ====== 4 Novos Indicadores Diretoria ====== */
+function updateDiretoriaSection(data, allData){
+  if(!document.getElementById('sectionDiretoria')) return;
+
+  /* --- 1. Custo estimado SLA violado --- */
+  const HRS_POR_VIOLACAO = 2; // estimativa média: 2h improdutivas por violação
+  const slaViolTotal = data.filter(t=>t.slaD==='Não').length;
+  const hrsImprod = slaViolTotal * HRS_POR_VIOLACAO;
+  document.getElementById('dirCustoValue').textContent = hrsImprod.toLocaleString('pt-BR') + 'h';
+  document.getElementById('dirCustoSub').textContent =
+    `${slaViolTotal} violações × ${HRS_POR_VIOLACAO}h estimadas por violação`;
+
+  /* --- 2. Índice de reincidência --- */
+  const clienteCatMap = {};
+  data.forEach(t=>{
+    const key = (t.cliente||'') + '||' + (t.cat||'');
+    clienteCatMap[key] = (clienteCatMap[key]||0)+1;
+  });
+  const reincidentes = Object.values(clienteCatMap).filter(v=>v>1).length;
+  const totalPares = Object.keys(clienteCatMap).length;
+  const reincidPct = totalPares ? Math.round(reincidentes/totalPares*100) : 0;
+  document.getElementById('dirReincidValue').textContent = reincidPct + '%';
+  document.getElementById('dirReincidSub').textContent =
+    `${reincidentes} combinações usuário+categoria repetidas`;
+
+  /* --- 3. Top 3 causas raiz --- */
+  const catCount = {};
+  data.forEach(t=>{ catCount[t.cat]=(catCount[t.cat]||0)+1; });
+  const top3 = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const medals = ['🥇','🥈','🥉'];
+  const list = document.getElementById('dirTop3List');
+  list.innerHTML = top3.map(([cat,n],i)=>`
+    <div class="dir-top3-item">
+      <span class="dir-top3-rank">${medals[i]}</span>
+      <span class="dir-top3-name">${CAT_LABELS[cat]||cat}</span>
+      <span class="dir-top3-count">${n}</span>
+    </div>
+  `).join('');
+
+  /* --- 4. Variação vs mês anterior --- */
+  const sortedMonths = [...ALL_MONTHS].sort();
+  const lastM = sortedMonths[sortedMonths.length-1];
+  const prevM = sortedMonths[sortedMonths.length-2];
+  if(lastM && prevM){
+    const curr = data.filter(t=>t.mes===lastM);
+    const prev = data.filter(t=>t.mes===prevM);
+    const metrics = [
+      { label:'Chamados',  curr:curr.length,                                  prev:prev.length },
+      { label:'Fechados',  curr:curr.filter(t=>t.fin).length,                 prev:prev.filter(t=>t.fin).length },
+      { label:'SLA Res.',  curr:curr.filter(t=>t.slaD==='Sim').length,        prev:prev.filter(t=>t.slaD==='Sim').length, isPct:true, tot_c:curr.filter(t=>t.slaD!=='Não possui').length, tot_p:prev.filter(t=>t.slaD!=='Não possui').length },
+    ];
+    const grid = document.getElementById('dirDeltaGrid');
+    grid.innerHTML = metrics.map(m=>{
+      let delta, txt, cls;
+      if(m.isPct){
+        const c = m.tot_c ? Math.round(m.curr/m.tot_c*100) : 0;
+        const p = m.tot_p ? Math.round(m.prev/m.tot_p*100) : 0;
+        delta = c-p;
+        txt = `${c}% (${delta>=0?'+':''}${delta}pp)`;
+        cls = delta>=0 ? 'dir-delta-up' : 'dir-delta-down';
+      } else {
+        delta = m.curr - m.prev;
+        const pct = m.prev ? Math.round(Math.abs(delta)/m.prev*100) : 0;
+        txt = `${m.curr} (${delta>=0?'+':''}${delta})`;
+        cls = m.label==='Chamados'
+          ? (delta<=0?'dir-delta-up':'dir-delta-down')
+          : (delta>=0?'dir-delta-up':'dir-delta-down');
+      }
+      const arrow = delta>0?'↑':delta<0?'↓':'→';
+      return `<div class="dir-delta-item">
+        <span class="dir-delta-label">${m.label} (${fmtMes(lastM)})</span>
+        <span class="dir-delta-val ${cls}">${arrow} ${txt}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
 /* ====== Render principal ====== */
 function render(){
   const data = getFiltered();
@@ -4026,6 +4236,9 @@ function render(){
   chartTempoEntrega.data._median = calcMedian;
   chartTempoEntrega.update();
   emptyState('chartTempoEntrega', resolvidosTempo.length===0);
+
+  /* ---- Seção Diretoria: 4 novos indicadores ---- */
+  updateDiretoriaSection(data, TICKETS);
 
   /* ---- Plano de Ação ---- */
   renderActionPlan({
