@@ -2239,6 +2239,14 @@ body{
       <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartAplicativo"></canvas></div>
     </div>
 
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Tempo de entrega de demandas</h3>
+        <span class="chart-tag">Distribuição · Prazo</span>
+      </div>
+      <div class="chart-canvas-wrap" style="height:340px"><canvas id="chartTempoEntrega"></canvas></div>
+    </div>
+
     <div class="chart-card span-2">
       <div class="chart-head">
         <h3>Pesquisa de WiFi — Hotel Prive do Atalaia</h3>
@@ -3322,6 +3330,80 @@ const chartAplicativo = new Chart(ctxAplicativo, {
     scales:{ x:{ beginAtZero:true, grid:{color:'rgba(255,255,255,.07)'}, ticks:{precision:0}, grace:'14%' }, y:{ grid:{display:false} } } }
 });
 
+/* ====== Tempo de Entrega de Demandas ====== */
+const TEMPO_BUCKETS = [
+  { label:'≤ 1h',   max:1,    color:'#2DD4A7' },
+  { label:'1–4h',   max:4,    color:'#3DA9FC' },
+  { label:'4–8h',   max:8,    color:'#9B6BFF' },
+  { label:'8–24h',  max:24,   color:'#FFB454' },
+  { label:'1–3d',   max:72,   color:'#FB8C00' },
+  { label:'3–7d',   max:168,  color:'#FB5A73' },
+  { label:'> 7d',   max:Infinity, color:'#C62828' },
+];
+const tempoEntregaPlugin = {
+  id:'tempoEntregaPlugin',
+  afterDraw(chart){
+    const {ctx, chartArea:{left,right,top,bottom}, scales} = chart;
+    const median = chart.data._median;
+    if(median===null||median===undefined) return;
+
+    // Encontrar bucket da mediana e posição X proporcional
+    const bucketIdx = TEMPO_BUCKETS.findIndex(b=>median<=b.max);
+    if(bucketIdx<0) return;
+    const xScale = scales.x;
+    if(!xScale) return;
+
+    // Posição x no centro do bucket da mediana
+    const xPos = xScale.getPixelForValue(bucketIdx);
+    if(xPos < left || xPos > right) return;
+
+    ctx.save();
+    ctx.strokeStyle='#22D3EE'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(xPos, top+18); ctx.lineTo(xPos, bottom); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label da mediana
+    ctx.fillStyle='rgba(16,26,46,.8)'; ctx.beginPath();
+    const lbl = `Mediana: ${median<24 ? median.toFixed(1)+'h' : (median/24).toFixed(1)+'d'}`;
+    ctx.font='bold 10.5px Inter,sans-serif';
+    const tw = ctx.measureText(lbl).width;
+    const lx = Math.min(right-tw/2-4, Math.max(left+tw/2+4, xPos));
+    ctx.roundRect(lx-tw/2-5, top+2, tw+10, 15, 3); ctx.fill();
+    ctx.fillStyle='#22D3EE'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(lbl, lx, top+9.5);
+    ctx.restore();
+  }
+};
+const ctxTempoEntrega = document.getElementById('chartTempoEntrega').getContext('2d');
+const chartTempoEntrega = new Chart(ctxTempoEntrega, {
+  type:'bar',
+  data:{
+    labels: TEMPO_BUCKETS.map(b=>b.label),
+    datasets:[{
+      data: TEMPO_BUCKETS.map(()=>0),
+      backgroundColor: TEMPO_BUCKETS.map(b=>b.color),
+      borderRadius:6, maxBarThickness:38,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    layout:{ padding:{ top:22 } },
+    plugins:{
+      legend:{display:false},
+      datalabels:{
+        anchor:'end', align:'end', offset:4,
+        color:'#EAF2FF', font:{size:11, weight:'700'},
+        formatter: v => v>0 ? v : ''
+      }
+    },
+    scales:{
+      x:{ grid:{display:false}, ticks:{color:'#93A4C2', font:{size:11}} },
+      y:{ beginAtZero:true, grace:'18%', ticks:{precision:0, color:'#5C6C8A'}, grid:{color:'rgba(255,255,255,.07)'} }
+    }
+  },
+  plugins:[tempoEntregaPlugin]
+});
+
 /* ====== Pesquisa de WiFi — Hotel Prive do Atalaia (dado fixo, não filtra por chamados) ====== */
 const dlStackLabel = {
   display: (ctx)=> ctx.dataset.data[ctx.dataIndex] >= 8,
@@ -3923,6 +4005,27 @@ function render(){
   chartAplicativo.data.datasets[0].data = appSorted.map(([,v])=>v);
   chartAplicativo.update();
   emptyState('chartAplicativo', appData.length===0);
+
+  /* ---- Chart: tempo de entrega de demandas ---- */
+  const resolvidosTempo = data.filter(t=>t.fin && t.res_h!=null && t.res_h>=0);
+  const bucketCounts = TEMPO_BUCKETS.map(()=>0);
+  resolvidosTempo.forEach(t=>{
+    const h = t.res_h;
+    const idx = TEMPO_BUCKETS.findIndex(b=>h<=b.max);
+    if(idx>=0) bucketCounts[idx]++;
+  });
+  let calcMedian = null;
+  if(resolvidosTempo.length){
+    const sorted = [...resolvidosTempo].sort((a,b)=>a.res_h-b.res_h);
+    const mid = Math.floor(sorted.length/2);
+    calcMedian = sorted.length%2===0
+      ? (sorted[mid-1].res_h+sorted[mid].res_h)/2
+      : sorted[mid].res_h;
+  }
+  chartTempoEntrega.data.datasets[0].data = bucketCounts;
+  chartTempoEntrega.data._median = calcMedian;
+  chartTempoEntrega.update();
+  emptyState('chartTempoEntrega', resolvidosTempo.length===0);
 
   /* ---- Plano de Ação ---- */
   renderActionPlan({
